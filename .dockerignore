@@ -7,3 +7,10 @@ __pycache__
 .DS_Store
 tests
 learning
+data/chroma
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage*
+.env*
+*.log

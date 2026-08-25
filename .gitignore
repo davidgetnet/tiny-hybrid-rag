@@ -57,3 +57,6 @@ model-cache/
 data/chroma/
 .docker/
 docker-data/
+
+# Personal learning notes
+learning/

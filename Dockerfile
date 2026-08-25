@@ -18,4 +18,4 @@ RUN python -m pip install --no-cache-dir \
 COPY src/ ./src/
 COPY data/ ./data/
 
-CMD ["python", "src/inspect_vector_retrieval.py"]
+CMD ["sh", "-c", "python src/index_chunks.py && python src/inspect_vector_retrieval.py"]
