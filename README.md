@@ -119,6 +119,20 @@ docker run --rm tiny-hybrid-rag
 
 The container installs the declared dependencies, creates a fresh Chroma index from the version-controlled sample documents, and prints retrieval inspection results. No host database is required.
 
+## Optional multi-container development environment
+
+The infrastructure learning setup keeps the Phase 4 runtime image but moves Chroma behind HTTP and adds a browser UI:
+
+```bash
+docker compose up -d chroma
+docker compose up -d --build
+docker compose logs app
+```
+
+The app uses `chroma:8000` on the Compose network. Chroma is available to the host at `http://localhost:8000`, and its development UI is available at `http://localhost:8090`. In the UI, connect to `http://localhost:8000` with the default tenant and database. Server data persists separately in `data/chroma-server/`; the earlier embedded database at `data/chroma/` is not migrated or modified.
+
+See `learning/infra/01-docker-compose-chroma-service.md` for the infrastructure walkthrough. This is Infrastructure Increment 01, not another RAG phase.
+
 ## Current limitations
 
 - The corpus contains only eight paragraph chunks.

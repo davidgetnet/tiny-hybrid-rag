@@ -1,0 +1,42 @@
+services:
+  app:
+    image: tiny-rag:phase4
+    command: >-
+      sh -c "python src/index_chunks.py &&
+      python src/inspect_vector_retrieval.py"
+    environment:
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    depends_on:
+      chroma:
+        condition: service_healthy
+
+  chroma:
+    image: chromadb/chroma:1.5.9
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/chroma-server:/data
+      - ./infra/chroma-config.yaml:/config.yaml:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          chroma browse __healthcheck__ --host http://localhost:8000 2>&1 |
+          grep -q 'Collection __healthcheck__ not found'
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  chroma-ui:
+    build:
+      context: https://github.com/BlackyDrum/chromadb-ui.git#1b0b0de7014c9e28d60da2c81fdc2d88bb515bf5
+    ports:
+      - "8090:80"
+    depends_on:
+      chroma:
+        condition: service_healthy

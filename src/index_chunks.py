@@ -6,7 +6,6 @@ from chunk_documents import chunk_documents
 from embeddings import MODEL_NAME, embed_chunks, load_embedding_model
 from load_documents import load_documents
 from vector_store import (
-    CHROMA_DIRECTORY,
     COLLECTION_NAME,
     get_collection,
     open_client,
@@ -15,7 +14,7 @@ from vector_store import (
 )
 
 
-def index_chunks(persist_directory: Path | str = CHROMA_DIRECTORY, model=None):
+def index_chunks(persist_directory: Path | str | None = None, model=None):
     """Embed and upsert the current chunks, then return the collection and records."""
 
     chunks = chunk_documents(load_documents())

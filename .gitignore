@@ -55,8 +55,12 @@ model-cache/
 
 # Generated local database and container state
 data/chroma/
+data/chroma-server/*
+!data/chroma-server/.gitkeep
 .docker/
 docker-data/
 
 # Personal learning notes
-learning/
+learning/*
+!learning/infra/
+!learning/infra/**

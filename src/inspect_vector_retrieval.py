@@ -5,7 +5,6 @@ from embeddings import embed_chunks, embed_query, load_embedding_model, rank_chu
 from inspect_embeddings import QUERIES, preview
 from load_documents import load_documents
 from vector_store import (
-    CHROMA_DIRECTORY,
     COLLECTION_NAME,
     DISTANCE_METRIC,
     get_collection,
@@ -28,7 +27,7 @@ def main() -> None:
     model = load_embedding_model()
     chunks = chunk_documents(load_documents())
     embedded_chunks, _ = embed_chunks(chunks, model)
-    collection = get_collection(open_client(CHROMA_DIRECTORY))
+    collection = get_collection(open_client())
 
     print(f"Collection: {COLLECTION_NAME}")
     print(f"Stored records reopened from disk: {collection.count()}")

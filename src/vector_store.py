@@ -1,6 +1,7 @@
 """Persist our precomputed chunk embeddings in a small local Chroma store."""
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -30,10 +31,18 @@ class VectorSearchResult:
     distance: float
 
 
-def open_client(persist_directory: Path | str = CHROMA_DIRECTORY):
-    """Open a local database whose records survive the current Python process."""
+def open_client(persist_directory: Path | str | None = None):
+    """Open the configured HTTP server, or the local persistent store by default."""
 
-    return chromadb.PersistentClient(path=str(persist_directory))
+    if persist_directory is not None:
+        return chromadb.PersistentClient(path=str(persist_directory))
+
+    chroma_host = os.getenv("CHROMA_HOST")
+    if chroma_host:
+        chroma_port = int(os.getenv("CHROMA_PORT", "8000"))
+        return chromadb.HttpClient(host=chroma_host, port=chroma_port)
+
+    return chromadb.PersistentClient(path=str(CHROMA_DIRECTORY))
 
 
 def get_collection(client) -> Collection:

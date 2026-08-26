@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -12,7 +13,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from embeddings import embed_query, load_embedding_model  # noqa: E402
 from index_chunks import index_chunks  # noqa: E402
-from vector_store import query_by_embedding  # noqa: E402
+from vector_store import open_client, query_by_embedding  # noqa: E402
 
 
 EXPECTED_IDS = {
@@ -88,6 +89,34 @@ class VectorStoreTests(unittest.TestCase):
 
     def test_collection_uses_cosine_distance(self) -> None:
         self.assertEqual(self.collection.configuration["hnsw"]["space"], "cosine")
+
+
+class ClientConfigurationTests(unittest.TestCase):
+    def test_environment_selects_http_client(self) -> None:
+        with (
+            patch.dict(
+                "os.environ",
+                {"CHROMA_HOST": "chroma", "CHROMA_PORT": "8123"},
+                clear=True,
+            ),
+            patch("vector_store.chromadb.HttpClient") as http_client,
+        ):
+            open_client()
+
+        http_client.assert_called_once_with(host="chroma", port=8123)
+
+    def test_explicit_directory_keeps_tests_and_local_tools_embedded(self) -> None:
+        with (
+            patch.dict(
+                "os.environ",
+                {"CHROMA_HOST": "chroma", "CHROMA_PORT": "8000"},
+                clear=True,
+            ),
+            patch("vector_store.chromadb.PersistentClient") as persistent_client,
+        ):
+            open_client("/tmp/explicit-chroma-test")
+
+        persistent_client.assert_called_once_with(path="/tmp/explicit-chroma-test")
 
 
 if __name__ == "__main__":
