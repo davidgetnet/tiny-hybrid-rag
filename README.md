@@ -133,6 +133,31 @@ The app uses `chroma:8000` on the Compose network. Chroma is available to the ho
 
 See `learning/infra/01-docker-compose-chroma-service.md` for the infrastructure walkthrough. This is Infrastructure Increment 01, not another RAG phase.
 
+## CI checks
+
+The GitHub Actions workflow separates three questions into independent jobs:
+
+```text
+unit-tests         → does known Python behavior still hold?
+integration-tests  → can our client use Chroma through HTTP?
+docker-build       → can the runtime image still be constructed?
+```
+
+Run the equivalent commands locally:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_chunking.py tests/test_embeddings.py tests/test_vector_store.py tests/unit
+
+docker compose up -d chroma
+CHROMA_HOST=localhost CHROMA_PORT=8000 python -m pytest tests/integration
+docker compose down
+
+docker build -t tiny-rag:ci .
+```
+
+See `learning/infra/02-ci-testing-foundation.md` for the testing and CI progression. This is a CI/testing infrastructure increment, not another RAG phase.
+
 ## Current limitations
 
 - The corpus contains only eight paragraph chunks.
