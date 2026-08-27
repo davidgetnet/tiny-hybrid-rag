@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - ci/github-actions-foundation
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Run unit and existing component tests
+        run: |
+          python -m pytest \
+            tests/test_chunking.py \
+            tests/test_embeddings.py \
+            tests/test_vector_store.py \
+            tests/unit
+
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Start Chroma
+        run: docker compose up -d chroma
+
+      - name: Wait for Chroma readiness
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:8000/api/v2/heartbeat; then
+              echo "Chroma is ready"
+              exit 0
+            fi
+            echo "Waiting for Chroma (attempt ${attempt}/30)"
+            sleep 2
+          done
+          docker compose logs chroma
+          exit 1
+
+      - name: Run Chroma HTTP integration test
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: "8000"
+        run: python -m pytest tests/integration
+
+      - name: Show Chroma logs after failure
+        if: failure()
+        run: docker compose logs chroma
+
+      - name: Stop Chroma
+        if: always()
+        run: docker compose down
+
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build Docker image
+        run: |
+          docker build -t tiny-rag:ci .
