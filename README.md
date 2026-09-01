@@ -20,7 +20,7 @@ local persistent Chroma collection (cosine distance)
 top-k records with text, stable ID, source, and chunk metadata
 ```
 
-No LLM, knowledge graph, lexical retriever, reranker, LangChain, or LangGraph orchestration is currently implemented. The system retrieves evidence; it does not synthesize answers.
+No LLM, lexical retriever, reranker, LangChain, or LangGraph orchestration is currently implemented. The system retrieves evidence; it does not synthesize answers.
 
 ## Implemented components
 
@@ -34,6 +34,8 @@ No LLM, knowledge graph, lexical retriever, reranker, LangChain, or LangGraph or
 - Repeatable indexing through upsert semantics
 - Structural tests covering chunks, embeddings, persistence, IDs, metadata, distances, filtering, and idempotent indexing
 - Reproducible Docker execution that creates the index before inspecting retrieval
+- A manually encoded NetworkX knowledge graph with typed entities, named directed relationships, and source-chunk provenance
+- Deterministic graph traversals for explicit one-hop and multi-hop questions
 
 ## Engineering decisions
 
@@ -84,7 +86,10 @@ These results are intentionally retained. They demonstrate that persistent vecto
 │   ├── vector_store.py
 │   ├── vector_retriever.py
 │   ├── index_chunks.py
-│   └── inspect_vector_retrieval.py
+│   ├── inspect_vector_retrieval.py
+│   ├── knowledge_graph.py
+│   ├── graph_retriever.py
+│   └── inspect_knowledge_graph.py
 ├── tests/
 ├── Dockerfile
 └── requirements.txt
@@ -108,6 +113,12 @@ Run all tests:
 
 ```bash
 python -m unittest discover -s tests -v
+```
+
+Inspect the complete knowledge graph and its deterministic traversals:
+
+```bash
+python src/inspect_knowledge_graph.py
 ```
 
 ## Run with Docker
@@ -163,8 +174,23 @@ See `learning/infra/02-ci-testing-foundation.md` for the testing and CI progress
 - The corpus contains only eight paragraph chunks.
 - Chunk synchronization is intentionally simple; a changed chunking strategy should rebuild or explicitly reconcile obsolete IDs.
 - The small general-purpose embedding model produces known relevance failures for two inspection queries.
-- Retrieval currently uses vectors and metadata filters only.
-- There is no answer generation, relationship traversal, or production service API.
+- Vector and graph retrieval remain separate; no hybrid orchestration exists yet.
+- The knowledge graph is manually encoded in memory and contains only selected facts from the sample documents.
+- There is no answer generation or production service API.
+
+## Project status
+
+- [x] Plain documents
+- [x] Loading
+- [x] Chunking
+- [x] Embeddings
+- [x] Vector retrieval
+- [x] Knowledge graph
+- [x] Graph retrieval
+- [ ] Hybrid retrieval
+- [ ] LLM synthesis
+- [ ] LangGraph orchestration
+- [ ] Observability
 
 ## Direction
 
