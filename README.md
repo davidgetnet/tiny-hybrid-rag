@@ -169,6 +169,18 @@ docker build -t tiny-rag:ci .
 
 See `learning/infra/02-ci-testing-foundation.md` for the testing and CI progression. This is a CI/testing infrastructure increment, not another RAG phase.
 
+## Local Git precheck
+
+Install the repository-local alias once per clone, then inspect each intended commit before pushing:
+
+```bash
+scripts/setup-git-alias.sh
+git add .
+git precheck
+```
+
+The precheck reports branch context, staged change categories, CI-alignment hints, and merged local branch candidates. It is a fast warning system, not a replacement for tests or GitHub Actions. See `learning/infra/03-git-precheck-and-branch-hygiene.md` for the complete workflow.
+
 ## Current limitations
 
 - The corpus contains only eight paragraph chunks.
