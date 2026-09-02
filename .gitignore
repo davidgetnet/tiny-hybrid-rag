@@ -62,5 +62,6 @@ docker-data/
 
 # Personal learning notes
 learning/*
+!learning/07-llm-synthesis.md
 !learning/infra/
 !learning/infra/**
