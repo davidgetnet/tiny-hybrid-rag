@@ -1,26 +1,28 @@
 # Tiny Hybrid RAG
 
-Tiny Hybrid RAG is a deliberately small retrieval system for examining vector search behavior before adding graph retrieval and LLM synthesis. It indexes eight paragraph-level chunks from two fictional Acorn Labs documents, persists their embeddings in Chroma, and exposes retrieval results with stable identity and source metadata.
+Tiny Hybrid RAG is a deliberately small retrieval-and-synthesis system. It indexes eight paragraph-level chunks from two fictional Acorn Labs documents, combines Chroma text evidence with explicit NetworkX facts, and can ask one LLM to compose a grounded answer from that evidence.
 
 The current implementation keeps the corpus small enough to compare database retrieval directly with brute-force cosine ranking. This makes retrieval quality, persistence, provenance, and failure modes observable without hiding them behind a framework.
 
 ## Architecture
 
 ```text
-Markdown documents
-        ↓
-deterministic paragraph chunking
-        ↓
-sentence-transformers/all-MiniLM-L6-v2
-        ↓
-384-dimensional float32 embeddings
-        ↓
-local persistent Chroma collection (cosine distance)
-        ↓
-top-k records with text, stable ID, source, and chunk metadata
+                         user query
+                             ↓
+                    deterministic router
+                    /        |        \
+              vector       graph     hybrid
+                 ↓            ↓       /   \
+              Chroma       NetworkX  /     \
+                 ↓            ↓     ↓       ↓
+            ranked text     paths   text + structured relationships
+                    \        |        /
+                     retrieval evidence
 ```
 
-No LLM, lexical retriever, reranker, LangChain, or LangGraph orchestration is currently implemented. The system retrieves evidence; it does not synthesize answers.
+The vector pipeline uses deterministic paragraph chunks and 384-dimensional `sentence-transformers/all-MiniLM-L6-v2` embeddings. The graph pipeline uses manually encoded Acorn Labs entities and directed relationships. The hybrid layer orchestrates them without collapsing their distinct evidence into one score.
+
+No lexical retriever, reranker, LangChain, or LangGraph orchestration is implemented. Retrieval stays deterministic; the optional LLM receives only the constructed evidence context.
 
 ## Implemented components
 
@@ -36,6 +38,9 @@ No LLM, lexical retriever, reranker, LangChain, or LangGraph orchestration is cu
 - Reproducible Docker execution that creates the index before inspecting retrieval
 - A manually encoded NetworkX knowledge graph with typed entities, named directed relationships, and source-chunk provenance
 - Deterministic graph traversals for explicit one-hop and multi-hop questions
+- Explicit vector, graph, and hybrid retrieval modes that preserve provenance
+- Inspectable grounded synthesis prompt with dry-run and optional OpenAI API modes
+- Deterministic vector, graph, and hybrid routing with structured evidence, provenance, stable-ID deduplication, and a trace-like execution record
 
 ## Engineering decisions
 
@@ -105,6 +110,8 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python src/index_chunks.py
 python src/inspect_vector_retrieval.py
+python src/inspect_llm_synthesis.py        # prompt inspection, no API call
+python src/inspect_llm_synthesis.py --live # requires OPENAI_API_KEY
 ```
 
 Indexing is safely repeatable for the current corpus: the same logical chunks receive the same IDs and are upserted rather than duplicated.
@@ -186,9 +193,10 @@ The precheck reports branch context, staged change categories, CI-alignment hint
 - The corpus contains only eight paragraph chunks.
 - Chunk synchronization is intentionally simple; a changed chunking strategy should rebuild or explicitly reconcile obsolete IDs.
 - The small general-purpose embedding model produces known relevance failures for two inspection queries.
-- Vector and graph retrieval remain separate; no hybrid orchestration exists yet.
+- The educational query router recognizes only the documented scenarios.
 - The knowledge graph is manually encoded in memory and contains only selected facts from the sample documents.
-- There is no answer generation or production service API.
+- Live answer generation requires `OPENAI_API_KEY`; dry-run inspection does not.
+- There is no production service API.
 
 ## Project status
 
@@ -199,11 +207,11 @@ The precheck reports branch context, staged change categories, CI-alignment hint
 - [x] Vector retrieval
 - [x] Knowledge graph
 - [x] Graph retrieval
-- [ ] Hybrid retrieval
-- [ ] LLM synthesis
+- [x] Hybrid retrieval
+- [x] LLM synthesis
 - [ ] LangGraph orchestration
 - [ ] Observability
 
 ## Direction
 
-The next retrieval increments will represent explicit domain relationships, add graph retrieval, and then compare or combine graph and vector evidence. Later work may add LLM synthesis, LangGraph orchestration, automated tests in CI, Docker validation, branch protection, image publishing, and deployment. These capabilities are not claimed by the current implementation.
+The next learning increment may represent this ordinary-Python workflow explicitly with LangGraph. That orchestration is intentionally not part of this phase.
