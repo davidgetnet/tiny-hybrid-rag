@@ -7,18 +7,20 @@ The current implementation keeps the corpus small enough to compare database ret
 ## Architecture
 
 ```text
-Markdown documents
-        ↓
-deterministic paragraph chunking
-        ↓
-sentence-transformers/all-MiniLM-L6-v2
-        ↓
-384-dimensional float32 embeddings
-        ↓
-local persistent Chroma collection (cosine distance)
-        ↓
-top-k records with text, stable ID, source, and chunk metadata
+                         user query
+                             ↓
+                    deterministic router
+                    /        |        \
+              vector       graph     hybrid
+                 ↓            ↓       /   \
+              Chroma       NetworkX  /     \
+                 ↓            ↓     ↓       ↓
+            ranked text     paths   text + structured relationships
+                    \        |        /
+                     retrieval evidence
 ```
+
+The vector pipeline uses deterministic paragraph chunks and 384-dimensional `sentence-transformers/all-MiniLM-L6-v2` embeddings. The graph pipeline uses manually encoded Acorn Labs entities and directed relationships. The hybrid layer orchestrates them without collapsing their distinct evidence into one score.
 
 No LLM, lexical retriever, reranker, LangChain, or LangGraph orchestration is currently implemented. The system retrieves evidence; it does not synthesize answers.
 
@@ -36,6 +38,7 @@ No LLM, lexical retriever, reranker, LangChain, or LangGraph orchestration is cu
 - Reproducible Docker execution that creates the index before inspecting retrieval
 - A manually encoded NetworkX knowledge graph with typed entities, named directed relationships, and source-chunk provenance
 - Deterministic graph traversals for explicit one-hop and multi-hop questions
+- Deterministic vector, graph, and hybrid routing with structured evidence, provenance, stable-ID deduplication, and a trace-like execution record
 
 ## Engineering decisions
 
@@ -199,7 +202,7 @@ The precheck reports branch context, staged change categories, CI-alignment hint
 - [x] Vector retrieval
 - [x] Knowledge graph
 - [x] Graph retrieval
-- [ ] Hybrid retrieval
+- [x] Hybrid retrieval
 - [ ] LLM synthesis
 - [ ] LangGraph orchestration
 - [ ] Observability

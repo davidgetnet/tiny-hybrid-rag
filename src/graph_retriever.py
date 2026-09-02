@@ -5,6 +5,7 @@ from collections.abc import Iterable
 import networkx as nx
 
 from knowledge_graph import (
+    CAN_APPROVE,
     MANAGES,
     OWNS,
     RELATIONSHIP,
@@ -117,4 +118,16 @@ def find_security_reviewer(
     return _one_or_none(
         find_relationship_targets(deployment_type, REQUIRES_REVIEW_FROM, graph),
         f"reviewer for {deployment_type}",
+    )
+
+
+def find_deployment_approver_for_team(
+    team: str, graph: nx.DiGraph = DEFAULT_GRAPH
+) -> str | None:
+    """Find who can approve the team's explicitly named deployment concept."""
+
+    deployment = f"{team} Production Deployment"
+    return _one_or_none(
+        find_relationship_sources(deployment, CAN_APPROVE, graph),
+        f"approver for {deployment}",
     )
