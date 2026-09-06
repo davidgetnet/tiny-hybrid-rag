@@ -78,6 +78,19 @@ class HybridEvidence:
 VectorRetriever = Callable[[str, int], Sequence[VectorSearchResult]]
 
 
+def retrieve_graph(query: str, *, graph: nx.DiGraph = DEFAULT_GRAPH) -> GraphEvidence:
+    """Retrieve graph evidence for a graph-capable routed question."""
+
+    mode = route_query(query)
+    if mode == RetrievalMode.GRAPH:
+        return _question_b_graph_evidence(graph)
+    if mode == RetrievalMode.HYBRID:
+        return _question_c_graph_evidence(graph)
+    raise UnsupportedQueryError(
+        f"Retrieval mode {mode.value!r} has no graph retrieval path."
+    )
+
+
 def route_query(query: str) -> RetrievalMode:
     """Apply explicit learning rules, not a production natural-language router."""
 
@@ -173,7 +186,14 @@ def _question_c_graph_evidence(graph: nx.DiGraph) -> GraphEvidence:
         raise LookupError(f"No reviewer is represented for {security_deployment}")
 
     return GraphEvidence(
-        entities=(technology, team, deployment, approver, security_deployment, reviewer),
+        entities=(
+            technology,
+            team,
+            deployment,
+            approver,
+            security_deployment,
+            reviewer,
+        ),
         relationships=(
             _edge_evidence(graph, team, USES, technology),
             _edge_evidence(graph, approver, CAN_APPROVE, deployment),
@@ -204,19 +224,17 @@ def retrieve_hybrid(
 
     if mode in (RetrievalMode.VECTOR, RetrievalMode.HYBRID):
         trace.append("3. vector retriever called")
-        vector_evidence = deduplicate_vector_evidence(
-            vector_retriever(query, top_k)
-        )
+        vector_evidence = deduplicate_vector_evidence(vector_retriever(query, top_k))
         trace.append(f"4. vector records returned = {len(vector_evidence)}")
 
     if mode == RetrievalMode.GRAPH:
         trace.append("3. graph traversal started from Python")
-        graph_evidence = _question_b_graph_evidence(graph)
+        graph_evidence = retrieve_graph(query, graph=graph)
         trace.append(f"4. resolved team = {graph_evidence.entities[1]}")
         trace.append(f"5. resolved manager = {graph_evidence.entities[2]}")
     elif mode == RetrievalMode.HYBRID:
         trace.append("5. graph traversal started from Python")
-        graph_evidence = _question_c_graph_evidence(graph)
+        graph_evidence = retrieve_graph(query, graph=graph)
         trace.append(f"6. resolved team = {graph_evidence.entities[1]}")
         trace.append(f"7. resolved approver = {graph_evidence.entities[3]}")
         trace.append(f"8. resolved security reviewer = {graph_evidence.entities[5]}")

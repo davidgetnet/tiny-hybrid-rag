@@ -64,5 +64,6 @@ docker-data/
 learning/*
 !learning/07-llm-synthesis.md
 !learning/08-langgraph-orchestration.md
+!learning/09-resilient-retrieval.md
 !learning/infra/
 !learning/infra/**
