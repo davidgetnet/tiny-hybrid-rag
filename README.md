@@ -41,6 +41,7 @@ No lexical retriever, reranker, LangChain, or LangGraph orchestration is impleme
 - Explicit vector, graph, and hybrid retrieval modes that preserve provenance
 - Inspectable grounded synthesis prompt with dry-run and optional OpenAI API modes
 - Deterministic vector, graph, and hybrid routing with structured evidence, provenance, stable-ID deduplication, and a trace-like execution record
+- Explicit LangGraph state, nodes, edges, and conditional retrieval branches
 
 ## Engineering decisions
 
@@ -112,6 +113,7 @@ python src/index_chunks.py
 python src/inspect_vector_retrieval.py
 python src/inspect_llm_synthesis.py        # prompt inspection, no API call
 python src/inspect_llm_synthesis.py --live # requires OPENAI_API_KEY
+python src/inspect_langgraph_workflow.py   # workflow paths and final state
 ```
 
 Indexing is safely repeatable for the current corpus: the same logical chunks receive the same IDs and are upserted rather than duplicated.
@@ -209,9 +211,9 @@ The precheck reports branch context, staged change categories, CI-alignment hint
 - [x] Graph retrieval
 - [x] Hybrid retrieval
 - [x] LLM synthesis
-- [ ] LangGraph orchestration
+- [x] LangGraph orchestration
 - [ ] Observability
 
 ## Direction
 
-The next learning increment may represent this ordinary-Python workflow explicitly with LangGraph. That orchestration is intentionally not part of this phase.
+The next learning increment may make execution observable across the explicit workflow. No observability framework is included yet.
